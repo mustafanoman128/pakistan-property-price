@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Large training data — not needed for deployment
+data/Pakistan House Prices and Property Listings.csv
+data/data_cleaned.csv
+
+# OS
+.DS_Store
+Thumbs.db
