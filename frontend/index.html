@@ -1073,6 +1073,7 @@
     const INFLATION_FACTOR = 2.9;
     let inflationAdjusted  = false;
     let rentRawP50         = 0;
+    let compareItems       = null;
 
     // ── Title case ────────────────────────────────────────────────────────
     // Words that must stay fully uppercase in Pakistani location names.
@@ -1312,6 +1313,7 @@
             document.getElementById('rb-monthly').textContent =
                 `PKR ${fmtPkr(Math.round(rentRawP50 * f))}/mo`;
         }
+        if (compareItems) renderHBarChart(compareItems);
     }
 
     function setInflation(adjusted) {
@@ -1326,6 +1328,7 @@
     function showResults(data, areaSqft) {
         inflationAdjusted = false;
         rentRawP50 = 0;
+        compareItems = null;
         document.getElementById('inf-baseline').classList.add('inf-active');
         document.getElementById('inf-adjusted').classList.remove('inf-active');
         document.getElementById('inf-note').style.display = 'none';
@@ -1525,6 +1528,7 @@
             }
         }
 
+        compareItems = items;
         renderHBarChart(items);
         btn.disabled    = false;
         btn.textContent = 'Compare Prices';
@@ -1541,6 +1545,7 @@
     }
 
     function renderHBarChart(items) {
+        const factor = inflationAdjusted ? INFLATION_FACTOR : 1;
         const valid  = items.filter(i => i.p50 !== null);
         const maxP50 = Math.max(...valid.map(i => i.p50));
         const minP50 = Math.min(...valid.map(i => i.p50));
@@ -1576,7 +1581,7 @@
 
             const valEl = document.createElement('div');
             valEl.className   = 'h-bar-val';
-            valEl.textContent = item.formatted ? `PKR ${item.formatted}` : '—';
+            valEl.textContent = item.p50 ? `PKR ${fmtPkr(Math.round(item.p50 * factor))}` : '—';
             meta.appendChild(valEl);
 
             if (isBest) {
