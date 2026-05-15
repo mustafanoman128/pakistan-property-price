@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0F1923">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Property Estimator">
     <title>Pakistan Property Price Estimator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -245,6 +249,9 @@
         .ac-list.open { display: block; }
         .ac-item {
             padding: 10px 14px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
             cursor: pointer;
             font-size: 0.9rem;
             font-weight: 500;
@@ -723,9 +730,12 @@
         }
         .footer-sep { margin: 0 8px; opacity: 0.45; }
 
+        * { -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; }
+        body { overscroll-behavior-y: none; }
+
         /* ── Mobile overrides ───────────────────────────────────────── */
         @media (max-width: 768px) {
-            * { -webkit-tap-highlight-color: transparent; }
             body { height: auto; overflow: auto; }
             main { padding: 14px 16px 24px; }
             .card { padding: 22px 18px; }
