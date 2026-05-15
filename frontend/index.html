@@ -730,6 +730,50 @@
         }
         .footer-sep { margin: 0 8px; opacity: 0.45; }
 
+        .inflation-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            margin: 12px 0 6px;
+        }
+        .inflation-label {
+            font-size: 0.70rem;
+            font-weight: 600;
+            color: var(--text-2);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-right: 2px;
+        }
+        .inf-btn {
+            padding: 5px 13px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: transparent;
+            color: var(--text-2);
+            font-size: 0.72rem;
+            font-weight: 600;
+            font-family: var(--font-body);
+            letter-spacing: 0.03em;
+            cursor: pointer;
+            transition: all 0.18s;
+            touch-action: manipulation;
+        }
+        .inf-btn.inf-active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .inf-btn:not(.inf-active):hover {
+            border-color: var(--text-3);
+            color: var(--text-1);
+        }
+        .inf-note {
+            font-size: 0.67rem;
+            color: var(--text-2);
+            margin-bottom: 10px;
+            letter-spacing: 0.01em;
+        }
+
         * { -webkit-tap-highlight-color: transparent; }
         html { scroll-behavior: smooth; }
         body { overscroll-behavior-y: none; }
@@ -882,6 +926,13 @@
             </div>
         </div>
 
+        <div class="inflation-row">
+            <span class="inflation-label">Show as:</span>
+            <button class="inf-btn inf-active" id="inf-baseline" onclick="setInflation(false)">2019 Prices</button>
+            <button class="inf-btn" id="inf-adjusted" onclick="setInflation(true)">2026 Est. ×2.9</button>
+        </div>
+        <div class="inf-note" id="inf-note" style="display:none">~2.9× CPI adjustment · Pakistan inflation 2019–2026 · Indicative only</div>
+
         <div class="range-block">
             <div class="range-ends">
                 <div>
@@ -1019,6 +1070,9 @@
     let emiOpen           = false;
     let rbOpen            = false;
     let rbLoaded          = false;
+    const INFLATION_FACTOR = 2.9;
+    let inflationAdjusted  = false;
+    let rentRawP50         = 0;
 
     // ── Title case ────────────────────────────────────────────────────────
     // Words that must stay fully uppercase in Pakistani location names.
@@ -1234,19 +1288,50 @@
         requestAnimationFrame(step);
     }
 
+    // ── Inflation-adjusted price rendering ───────────────────────────────
+    function renderPrices(skipP50 = false) {
+        if (!mainResult) return;
+        const f    = inflationAdjusted ? INFLATION_FACTOR : 1;
+        const area = lastAreaSqft || 0;
+        const p50  = mainResult.p50 * f;
+
+        if (!skipP50) {
+            document.getElementById('res-p50').textContent = `PKR ${fmtPkr(Math.round(p50))}`;
+        }
+        if (area > 0) {
+            document.getElementById('res-sqft').textContent =
+                `PKR ${Math.round(p50 / area).toLocaleString()} per sqft`;
+            document.getElementById('res-per-marla').textContent =
+                `PKR ${fmtPkr(Math.round(p50 / (area / 272.25)))} per Marla`;
+        }
+        document.getElementById('res-p10').textContent = `PKR ${fmtPkr(Math.round(mainResult.p10 * f))}`;
+        document.getElementById('res-p90').textContent = `PKR ${fmtPkr(Math.round(mainResult.p90 * f))}`;
+
+        if (emiOpen) calcEMI();
+        if (rentRawP50 > 0) {
+            document.getElementById('rb-monthly').textContent =
+                `PKR ${fmtPkr(Math.round(rentRawP50 * f))}/mo`;
+        }
+    }
+
+    function setInflation(adjusted) {
+        inflationAdjusted = adjusted;
+        document.getElementById('inf-baseline').classList.toggle('inf-active', !adjusted);
+        document.getElementById('inf-adjusted').classList.toggle('inf-active', adjusted);
+        document.getElementById('inf-note').style.display = adjusted ? 'block' : 'none';
+        renderPrices();
+    }
+
     // ── Render results ────────────────────────────────────────────────────
     function showResults(data, areaSqft) {
+        inflationAdjusted = false;
+        rentRawP50 = 0;
+        document.getElementById('inf-baseline').classList.add('inf-active');
+        document.getElementById('inf-adjusted').classList.remove('inf-active');
+        document.getElementById('inf-note').style.display = 'none';
+
         animatePrice(document.getElementById('res-p50'), data.p50, data.p50_formatted);
-
-        const priceSqft  = areaSqft > 0 ? Math.round(data.p50 / areaSqft) : 0;
-        const priceMarla = areaSqft > 0 ? Math.round(data.p50 / (areaSqft / 272.25)) : 0;
-        document.getElementById('res-sqft').textContent =
-            areaSqft > 0 ? `PKR ${priceSqft.toLocaleString()} per sqft` : '';
-        document.getElementById('res-per-marla').textContent =
-            areaSqft > 0 ? `PKR ${fmtPkr(priceMarla)} per Marla` : '';
-
-        document.getElementById('res-p10').textContent = `PKR ${data.p10_formatted}`;
-        document.getElementById('res-p90').textContent = `PKR ${data.p90_formatted}`;
+        renderPrices(true);
 
         // City avg indicator
         const avgRow = document.getElementById('city-avg-row');
@@ -1334,7 +1419,7 @@
 
     function calcEMI() {
         if (!mainResult) return;
-        const price   = mainResult.p50;
+        const price   = mainResult.p50 * (inflationAdjusted ? INFLATION_FACTOR : 1);
         const downPct = parseFloat(document.getElementById('emi-down').value)   || 0;
         const rate    = parseFloat(document.getElementById('emi-rate').value)    || 0;
         const tenure  = parseFloat(document.getElementById('emi-tenure').value) || 0;
@@ -1375,9 +1460,12 @@
         try {
             const data        = await callPredict({ ...lastPayload, purpose: 'For Rent' });
             const monthlyRent = data.p50;
+            rentRawP50        = data.p50;
             const annualYield = (monthlyRent * 12 / mainResult.p50) * 100;
 
-            document.getElementById('rb-monthly').textContent = `PKR ${data.p50_formatted}/mo`;
+            const f = inflationAdjusted ? INFLATION_FACTOR : 1;
+            document.getElementById('rb-monthly').textContent =
+                `PKR ${fmtPkr(Math.round(data.p50 * f))}/mo`;
             document.getElementById('rb-yield').textContent   = `${annualYield.toFixed(1)}%`;
 
             const verdict = document.getElementById('rb-verdict');
