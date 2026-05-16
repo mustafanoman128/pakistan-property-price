@@ -1,7 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, field_validator
 from typing import Optional
+import os
 import inference
 
 app = FastAPI(
@@ -19,6 +22,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+
+@app.get("/", include_in_schema=False)
+def serve_frontend():
+    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 VALID_CITIES          = ['Karachi', 'Lahore', 'Islamabad', 'Rawalpindi', 'Faisalabad']
 VALID_PROPERTY_TYPES  = ['House', 'Flat', 'Upper Portion', 'Lower Portion', 'Penthouse', 'Room']
@@ -109,15 +120,6 @@ class PredictResponse(BaseModel):
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────
-
-@app.get('/')
-def root():
-    return {
-        'name':      'Pakistan Property Price API',
-        'version':   '1.0.0',
-        'endpoints': ['/predict', '/locations', '/options'],
-    }
-
 
 @app.get('/options')
 def options():
