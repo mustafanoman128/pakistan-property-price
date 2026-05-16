@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-All four phases are complete. The project is a working end-to-end property price estimator:
+End-to-end property price estimator — fully deployed:
 - ML model trained on 120k+ Zameen.com listings (2018–2019)
-- FastAPI backend serving predictions
-- Single-page frontend with full UI
+- FastAPI backend → `https://pakistan-property-price.onrender.com`
+- Frontend static site → `https://pakistan-property-price-1.onrender.com`
+- GitHub → `https://github.com/mustafanoman128/pakistan-property-price`
 
 ## Running the Backend
 
@@ -16,11 +17,11 @@ cd backend
 python -m uvicorn main:app --reload
 ```
 
-`pip` and `uvicorn` are not on PATH on this machine — always use `python -m` prefix. Backend runs at `http://127.0.0.1:8000`. The frontend (`frontend/index.html`) is opened directly in the browser; it hardcodes `http://127.0.0.1:8000` as the API base.
+`pip` and `uvicorn` are not on PATH on this machine — always use `python -m` prefix. Backend runs at `http://127.0.0.1:8000`.
+
+**Local dev API switch:** `frontend/index.html` line ~1004 has `const API = 'https://pakistan-property-price.onrender.com'`. Change to `http://127.0.0.1:8000` for local testing; revert before pushing.
 
 ## Backend Architecture
-
-Three files in `backend/`:
 
 | File | Role |
 |------|------|
@@ -44,25 +45,41 @@ Three files in `backend/`:
 Single file: `frontend/index.html`. No build step, no dependencies, open directly in browser.
 
 **CSS design system — do not bypass these:**
-- Single font: Inter (weights 400/500/600/700/800 only). Do not add Montserrat, IBM Plex Mono, or any other family.
+- Single font: Inter (weights 400/500/600/700/800 only). Do not add any other family.
 - All colours are CSS tokens in `:root`. Never add hardcoded hex values — always use or extend the token set:
   - `--accent` / `--accent-dark` / `--accent-dim` — brand green and its tints
   - `--text-1` / `--text-2` / `--text-3` — primary, secondary, placeholder text
   - `--border` — all dividers and input borders
   - `--surface` — card backgrounds
-  - `--radius-card` / `--radius-input` — border radii
-- Page background: `body::before` (fixed dark property photo) + `body::after` (fixed dark gradient overlay). Cards float above via `box-shadow`. No `backdrop-filter` — it was removed for GPU performance.
-- Collapsible panels (EMI calculator, Rental Yield): toggled via JS `display` on `.emi-wrap` / `.rb-wrap`. Both share `.panel-header` for shared styles; individual class names (`.emi-header`, `.rb-header`) are kept because JS targets them by class.
+  - `--radius-card: 18px` / `--radius-input: 9px` — border radii
+- Page background: `body::before` (fixed dark property photo, base64-inlined) + `body::after` (fixed dark gradient overlay). Cards float above via deep `box-shadow`.
+- Cards use `backdrop-filter: blur(20px) saturate(180%)` with `background: rgba(255,255,255,0.86)` and a `4px` green `border-top`. Do not remove the backdrop-filter — it was deliberately re-added for visual quality.
+- Collapsible panels (EMI calculator, Rental Yield): both share `.panel-header` / `.panel-title` / `.panel-chevron` / `.panel-body` CSS classes. JS targets them by ID (`emi-body`, `rb-body`, `emi-chevron`, `rb-chevron`).
 
-**Key JS design decisions:**
-- `fmtPkr(amount)` mirrors backend `format_pkr` — same thresholds. Keep them in sync.
+**Key JS state variables:**
+- `mainResult` — raw API response from the last `/predict` call
+- `lastPayload` — last form payload, used to fetch comparison/rental predictions
+- `lastAreaSqft` — area in sqft at time of last prediction, used by `renderPrices()`
+- `inflationAdjusted` — boolean; drives the 2026 toggle
+- `INFLATION_FACTOR = 2.9` — cumulative Pakistan CPI 2019→mid-2026
+- `rentRawP50` — raw rent p50 from the rental yield fetch; 0 until loaded
+- `compareItems` — raw array of `{ label, p50, formatted }` from last comparison run; null until compared
+
+**Key JS functions:**
+- `fmtPkr(amount)` — mirrors backend `format_pkr`. Keep thresholds in sync.
+- `renderPrices(skipP50)` — single source of truth for all displayed price values. Applies `INFLATION_FACTOR` when `inflationAdjusted` is true. Also re-renders the comparison chart and recalculates EMI.
+- `setInflation(adjusted)` — toggles `inflationAdjusted`, syncs pill button UI, calls `renderPrices()`.
+- `animatePrice(el, targetRaw, targetFormatted)` — 700ms ease-out count-up on results reveal. Called once in `showResults`; `renderPrices` handles all subsequent updates without animation.
+- `renderHBarChart(items)` — reads `inflationAdjusted` internally to apply the factor to displayed values. Bar widths are ratio-based so they're unaffected by the multiplier.
+- `syncSelectColor(sel)` — adds `.has-value` class to `<select>` elements when a value is chosen, turning selected text green via CSS.
+- `toTitleCase()` — smart casing: roman numerals (I–XX) and abbreviations (DHA, PECHS, KDA, LDA, NHA, PAF, NFC, PIA, PTCL) stay ALL CAPS.
+
+**Other JS patterns:**
 - Sqft unit is frontend-only: converts to Marla before API call (`val / 272.25`, unit = `'Marla'`). Backend only accepts Marla/Kanal.
-- Location autocomplete: on focus fetches top 200 locations (filtered by selected city via `?city=`), on input debounces 280ms. Changing city clears the location field.
-- `toTitleCase()` applies smart casing: roman numerals (I–XX) and abbreviations (DHA, PECHS, KDA, LDA, NHA, PAF, NFC, PIA, PTCL) stay ALL CAPS; hyphenated tokens like F-7 are treated as a single word.
-- Price count-up animation (`animatePrice`) runs 700ms ease-out cubic on results reveal.
-- Stale result banner appears when any form field changes after a result is showing; clears on next successful submit.
-- EMI calculator and Rental Yield Analysis panels are only shown when purpose = "For Sale".
-- Rental Yield Analysis fetches a second prediction with `purpose = 'For Rent'` on demand (lazy, cached in `rbLoaded`).
+- Location autocomplete: on focus fetches top 200 locations (filtered by city), on input debounces 280ms. Changing city clears location field.
+- Stale result banner appears on any form change after a result is shown; clears on next successful submit.
+- EMI and Rental Yield panels are only shown when purpose = "For Sale". Rental yield fetches a second `/predict` with `purpose = 'For Rent'` on demand (lazy, cached in `rbLoaded`). Annual yield % is unaffected by the inflation toggle because both sale and rent prices scale by the same factor.
+- `showResults()` always resets `inflationAdjusted = false`, `rentRawP50 = 0`, and `compareItems = null` — every new prediction starts from the 2019 baseline.
 
 ## Project Structure
 
@@ -70,24 +87,23 @@ Single file: `frontend/index.html`. No build step, no dependencies, open directl
 Pakistan Property Price/
 ├── CLAUDE.md                  ← Claude Code instructions (this file)
 ├── PRD.md                     ← Product requirements document
-├── data/                      ← All datasets
-│   ├── Pakistan House Prices and Property Listings.csv  (raw Zameen.com data)
-│   ├── data_cleaned.csv       (cleaned output from the notebook)
-│   └── location_lookup.csv    (neighbourhood → lat/lon + city; source copy)
+├── data/                      ← Source datasets (large CSVs excluded from git via .gitignore)
+│   ├── Pakistan House Prices and Property Listings.csv  (raw; gitignored)
+│   ├── data_cleaned.csv       (processed; gitignored)
+│   └── location_lookup.csv    (source copy; committed)
 ├── model/                     ← Trained model output (source copy from notebook)
 │   └── model_artifacts.pkl    (copy this to backend/ after retraining)
 ├── notebooks/                 ← Jupyter training notebook
 │   └── Pakistan Price.ipynb
-├── backend/                   ← FastAPI server (self-contained; has its own working copies)
+├── backend/                   ← FastAPI server (self-contained working copies)
 │   ├── main.py
 │   ├── inference.py
-│   ├── model_artifacts.pkl    (working copy used by the server)
-│   ├── location_lookup.csv    (working copy used by the server)
+│   ├── model_artifacts.pkl
+│   ├── location_lookup.csv
 │   └── requirements.txt
 └── frontend/                  ← Single-page web app
     ├── index.html
-    ├── hero.jpeg              (background photo used by the app)
-    └── pakistan house.jpeg    (alternate/unused background photo)
+    └── hero.jpeg              (background photo, also base64-inlined in CSS)
 ```
 
 ## Running the Notebook
