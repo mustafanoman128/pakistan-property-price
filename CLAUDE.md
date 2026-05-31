@@ -4,11 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-End-to-end property price estimator — fully deployed:
+End-to-end property price estimator — fully deployed as a single Render Web Service:
 - ML model trained on 120k+ Zameen.com listings (2018–2019)
-- FastAPI backend → `https://pakistan-property-price.onrender.com`
-- Frontend static site → `https://pakistan-property-price-1.onrender.com`
+- Single service (API + frontend) → `https://pakistan-property-price.onrender.com`
 - GitHub → `https://github.com/mustafanoman128/pakistan-property-price`
+
+The FastAPI backend serves the frontend from `backend/static/`. The root route (`GET /`) returns `backend/static/index.html`; assets are served under `/static/`.
 
 ## Running the Backend
 
@@ -19,7 +20,11 @@ python -m uvicorn main:app --reload
 
 `pip` and `uvicorn` are not on PATH on this machine — always use `python -m` prefix. Backend runs at `http://127.0.0.1:8000`.
 
-**Local dev API switch:** `frontend/index.html` line ~1004 has `const API = 'https://pakistan-property-price.onrender.com'`. Change to `http://127.0.0.1:8000` for local testing; revert before pushing.
+**Local dependency install:** `python -m pip install -r requirements.txt` (run from `backend/`).
+
+**Local dev API switch:** `frontend/index.html` line ~1066 has `const API = 'https://pakistan-property-price.onrender.com'`. Change to `http://127.0.0.1:8000` for local testing; revert before pushing.
+
+**Deployment workflow:** `frontend/index.html` is the source file — edit this one. Before pushing to Render, copy it to `backend/static/index.html`. Render serves the copy; the original in `frontend/` is for local development.
 
 ## Backend Architecture
 
@@ -31,7 +36,9 @@ python -m uvicorn main:app --reload
 | `location_lookup.csv` | Neighbourhood → mean lat/lon + listing count + assigned city |
 | `requirements.txt` | fastapi, uvicorn, lightgbm, pandas, numpy, scikit-learn, joblib, rapidfuzz |
 
-**Request flow:** `POST /predict` → Pydantic validates → `inference.predict()` → fuzzy-matches location name → builds 13-feature row → runs 3 quantile models → returns p10/p50/p90 + formatted strings + confidence + lat/lon.
+**Request flow:** `POST /predict` → Pydantic validates → `inference.predict()` → fuzzy-matches location name → builds 13-feature row → runs 3 quantile models → returns p10/p50/p90 + formatted strings + confidence + lat/lon. The `city_median_pkr` field in the response is the city-level median in raw PKR; the frontend uses it to render an "X% above/below city median" badge in the results panel.
+
+**API docs:** FastAPI auto-generates interactive docs at `http://127.0.0.1:8000/docs` (Swagger UI) and `http://127.0.0.1:8000/redoc`.
 
 **Key inference details:**
 - `_fuzzy_match()` uses rapidfuzz with `score_cutoff=60`. Falls back to exact match if rapidfuzz not installed.
@@ -45,15 +52,16 @@ python -m uvicorn main:app --reload
 Single file: `frontend/index.html`. No build step, no dependencies, open directly in browser.
 
 **CSS design system — do not bypass these:**
-- Single font: Inter (weights 400/500/600/700/800 only). Do not add any other family.
+- Two fonts: `Playfair Display` (display/headings, `--font-display`) for prices and the page title; `Outfit` (body/UI, `--font-body`) for all other text. Do not add any other family.
 - All colours are CSS tokens in `:root`. Never add hardcoded hex values — always use or extend the token set:
   - `--accent` / `--accent-dark` / `--accent-dim` — brand green and its tints
+  - `--gold` / `--gold-dim` — warm copper accent (used for the 2026 inflation pill active state)
   - `--text-1` / `--text-2` / `--text-3` — primary, secondary, placeholder text
   - `--border` — all dividers and input borders
   - `--surface` — card backgrounds
-  - `--radius-card: 18px` / `--radius-input: 9px` — border radii
+  - `--radius-card: 20px` / `--radius-input: 10px` — border radii
 - Page background: `body::before` (fixed dark property photo, base64-inlined) + `body::after` (fixed dark gradient overlay). Cards float above via deep `box-shadow`.
-- Cards use `backdrop-filter: blur(20px) saturate(180%)` with `background: rgba(255,255,255,0.86)` and a `4px` green `border-top`. Do not remove the backdrop-filter — it was deliberately re-added for visual quality.
+- Cards use `backdrop-filter: blur(32px) saturate(200%)` with `background: rgba(255,255,255,0.76)` and a `5px` green `border-top` plus an inset white highlight. Do not remove the backdrop-filter — it was deliberately re-added for visual quality.
 - Collapsible panels (EMI calculator, Rental Yield): both share `.panel-header` / `.panel-title` / `.panel-chevron` / `.panel-body` CSS classes. JS targets them by ID (`emi-body`, `rb-body`, `emi-chevron`, `rb-chevron`).
 
 **Key JS state variables:**
@@ -63,6 +71,7 @@ Single file: `frontend/index.html`. No build step, no dependencies, open directl
 - `inflationAdjusted` — boolean; drives the 2026 toggle
 - `INFLATION_FACTOR = 2.9` — cumulative Pakistan CPI 2019→mid-2026
 - `rentRawP50` — raw rent p50 from the rental yield fetch; 0 until loaded
+- `rbLoaded` — boolean; true once the rental yield fetch has completed for the current result (prevents duplicate fetches)
 - `compareItems` — raw array of `{ label, p50, formatted }` from last comparison run; null until compared
 
 **Key JS functions:**
@@ -100,8 +109,10 @@ Pakistan Property Price/
 │   ├── inference.py
 │   ├── model_artifacts.pkl
 │   ├── location_lookup.csv
-│   └── requirements.txt
-└── frontend/                  ← Single-page web app
+│   ├── requirements.txt
+│   └── static/                ← Deployed frontend (copy of frontend/index.html)
+│       └── index.html
+└── frontend/                  ← Source frontend — edit here, then copy to backend/static/
     ├── index.html
     └── hero.jpeg              (background photo, also base64-inlined in CSS)
 ```

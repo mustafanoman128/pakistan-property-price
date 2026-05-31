@@ -1,9 +1,9 @@
 # Product Requirements Document
 ## Pakistan Property Price Prediction Model
 
-**Version:** 1.1  
-**Date:** 2026-05-14  
-**Status:** In Progress
+**Version:** 1.2  
+**Date:** 2026-05-17  
+**Status:** Deployed
 
 ---
 
@@ -41,7 +41,6 @@ This project builds a machine learning model that predicts the fair sale price o
 - Commercial or industrial properties
 - Properties outside the five cities in the dataset
 - Real-time price predictions (no live data pipeline in this phase)
-- Mobile or web app deployment
 
 ---
 
@@ -173,11 +172,14 @@ Build the single analysis notebook covering:
 - ✅ KMeans geographic clustering (50 clusters on lat/lon, fit on training data only — `lat_lon_cluster` feature)
 - ~~Stacking ensemble (LightGBM + XGBoost + Linear)~~ — dropped; MAPE target (≤ 25%) already achieved at ~18%
 
-### Phase 4 — Deployment Readiness
-- Inference wrapper: accepts raw property attributes → returns predicted PKR price
-- Model serialization (`joblib`)
-- Confidence interval estimation (quantile regression)
-- Retraining documentation
+### Phase 4 — Deployment (Complete)
+- ✅ Inference wrapper: accepts raw property attributes → returns predicted PKR price
+- ✅ Model serialization (`joblib`)
+- ✅ Confidence interval estimation (quantile regression)
+- ✅ FastAPI backend with `/predict`, `/locations`, `/options` endpoints
+- ✅ Single-page frontend served from `backend/static/` via FastAPI
+- ✅ Deployed as a single Render Web Service → `https://pakistan-property-price.onrender.com`
+- ✅ Inflation toggle (×2.9 CPI adjustment) — all displayed values update simultaneously
 
 ---
 
@@ -187,7 +189,7 @@ Build the single analysis notebook covering:
 |------|------------|--------|------------|
 | Listed price ≠ actual transaction price | High | Medium | Document caveat; model predicts listed price, not transacted price |
 | Model predicts 2019-era prices, not 2026 prices | High | High | Date features intentionally excluded (they cannot extrapolate to future years). Outputs should be presented as relative/calibrated estimates, not absolute current market values. Retraining on current data is the correct long-term fix. |
-| PKR devaluation since training data (2018–2019) | High | High | Model output is in nominal 2019 PKR. Website must display a clear disclaimer. Phase 4 may apply a property price index adjustment post-prediction. |
+| PKR devaluation since training data (2018–2019) | High | High | Model output is in nominal 2019 PKR. Disclaimer shown on all results. Inflation toggle (×2.9 CPI) implemented in Phase 4 — updates all displayed values simultaneously. |
 | Sparse data for rare cities / property types | Medium | Medium | Per-segment MAPE monitoring; flag high-error segments |
 | Zero-bedroom/bath listings as NaN may bias predictions | Low | Low | LightGBM learns from NaN direction at each split; monitor residuals for this group |
 

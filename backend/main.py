@@ -1,4 +1,6 @@
-from fastapi import FastAPI, HTTPException
+import logging
+
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -6,6 +8,8 @@ from pydantic import BaseModel, field_validator
 from typing import Optional
 import os
 import inference
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Pakistan Property Price API",
@@ -92,6 +96,15 @@ class PredictRequest(BaseModel):
     def validate_area_value(cls, v):
         if v <= 0:
             raise ValueError('Must be a positive number')
+        if v > 10_000:
+            raise ValueError('Exceeds maximum area (10,000 Marla / Kanal)')
+        return v
+
+    @field_validator('location')
+    @classmethod
+    def validate_location(cls, v):
+        if len(v.strip()) > 200:
+            raise ValueError('Location name too long (max 200 characters)')
         return v
 
     @field_validator('bedrooms', 'baths', mode='before')
@@ -133,7 +146,10 @@ def options():
 
 
 @app.get('/locations')
-def locations(q: str = '', city: str = ''):
+def locations(
+    q:    str = Query(default='', max_length=200),
+    city: str = Query(default='', max_length=50),
+):
     """
     Return locations for autocomplete, optionally filtered by city.
     With ?q=<query>: substring-filtered, max 50 results.
@@ -167,5 +183,8 @@ def predict(req: PredictRequest):
         )
         result['disclaimer'] = DISCLAIMER
         return result
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Unhandled error in /predict for city=%s location=%s", req.city, req.location)
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

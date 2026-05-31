@@ -1,9 +1,12 @@
+import logging
 import joblib
 import numpy as np
 import pandas as pd
 from math import radians, cos, sin, asin, sqrt
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 # ── Load all artifacts once at module import ──────────────────────────────
 # The backend drops model_artifacts.pkl and location_lookup.csv into this
@@ -12,7 +15,31 @@ from typing import Optional
 
 _DIR = Path(__file__).parent
 
-_art = joblib.load(_DIR / 'model_artifacts.pkl')
+try:
+    # Trusted artifact: produced by our own training notebook (notebooks/Pakistan Price.ipynb).
+    # Never replace this file with one from an untrusted source.
+    _art = joblib.load(_DIR / 'model_artifacts.pkl')
+except FileNotFoundError:
+    raise RuntimeError(
+        f"model_artifacts.pkl not found in {_DIR}. "
+        "Copy it from model/ into backend/ before starting the server."
+    )
+except Exception as e:
+    raise RuntimeError(f"Failed to load model_artifacts.pkl: {e}") from e
+
+_REQUIRED_KEYS = [
+    'model_p10', 'model_p50', 'model_p90', 'kmeans',
+    'loc_median', 'city_median', 'global_median',
+    'loc_ppq', 'city_ppq', 'global_ppq',
+    'city_enc', 'property_type_enc', 'purpose_enc',
+    'FEATURE_COLS', 'CITY_CENTERS', 'PREMIUM_KEYWORDS',
+]
+_missing = [k for k in _REQUIRED_KEYS if k not in _art]
+if _missing:
+    raise RuntimeError(
+        f"model_artifacts.pkl is missing keys: {_missing}. "
+        "Re-run the serialization cell in the training notebook."
+    )
 
 model_p10  = _art['model_p10']
 model_p50  = _art['model_p50']
@@ -37,7 +64,21 @@ CITY_CENTERS     = _art['CITY_CENTERS']
 PREMIUM_KEYWORDS = _art['PREMIUM_KEYWORDS']
 
 # Location lookup table (for lat/lon resolution and autocomplete)
-_loc_df = pd.read_csv(_DIR / 'location_lookup.csv')
+try:
+    _loc_df = pd.read_csv(_DIR / 'location_lookup.csv')
+except FileNotFoundError:
+    raise RuntimeError(
+        f"location_lookup.csv not found in {_DIR}. "
+        "Copy it from data/ into backend/ before starting the server."
+    )
+
+_bad_mask = _loc_df['mean_lat'].isna() | _loc_df['mean_lon'].isna()
+if _bad_mask.any():
+    raise RuntimeError(
+        f"location_lookup.csv has {_bad_mask.sum()} rows with missing lat/lon: "
+        f"{_loc_df.loc[_bad_mask, 'location'].tolist()[:5]}"
+    )
+
 _loc_df['location'] = _loc_df['location'].str.lower().str.strip()
 _location_names = _loc_df['location'].tolist()
 
@@ -67,11 +108,10 @@ def _fuzzy_match(query: str) -> Optional[str]:
     """Return best-matching canonical location name, or None if score < 60."""
     try:
         from rapidfuzz import process
-        result = process.extractOne(query, _location_names, score_cutoff=60)
-        return result[0] if result else None
     except ImportError:
-        # Exact fallback when rapidfuzz is not installed
         return query if query in _location_names else None
+    result = process.extractOne(query, _location_names, score_cutoff=60)
+    return result[0] if result else None
 
 
 def _resolve_lat_lon(canonical: Optional[str], city: str):
@@ -80,7 +120,23 @@ def _resolve_lat_lon(canonical: Optional[str], city: str):
         row = _loc_df[_loc_df['location'] == canonical]
         if not row.empty:
             return float(row.iloc[0]['mean_lat']), float(row.iloc[0]['mean_lon'])
-    return CITY_CENTERS[city]
+    city_center = CITY_CENTERS.get(city)
+    if city_center is None:
+        raise ValueError(
+            f"No city centre coordinates configured for '{city}'. "
+            "Add it to CITY_CENTERS in the model artifacts."
+        )
+    return city_center
+
+
+def _encode(enc: dict, label: str, field_name: str) -> int:
+    """Encode a categorical label; raises ValueError on unknown values."""
+    code = enc.get(label)
+    if code is None:
+        raise ValueError(
+            f"Unknown {field_name} '{label}'. Known values: {list(enc.keys())}"
+        )
+    return code
 
 
 def format_pkr(amount: float) -> str:
@@ -135,6 +191,7 @@ def predict(
     is_premium = int(any(kw in location_norm for kw in PREMIUM_KEYWORDS))
 
     # ── Distance to city commercial centre ────────────────────────────────
+    # CITY_CENTERS[city] is safe here: _resolve_lat_lon already raised for unknown cities.
     dist = _haversine_km(lat, lon, *CITY_CENTERS[city])
 
     # ── Target encoding — 3-tier fallback ────────────────────────────────
@@ -143,13 +200,13 @@ def predict(
     loc_ppq_val = loc_ppq.get(lookup_key,    city_ppq.get(city,   global_ppq))
 
     # ── KMeans cluster ────────────────────────────────────────────────────
-    cluster = int(kmeans.predict([[lat, lon]])[0])
+    cluster = int(kmeans.predict(np.array([[lat, lon]]))[0])
 
     # ── Categorical encoding ──────────────────────────────────────────────
     row = {
-        'city_code':               city_enc.get(city, 0),
-        'property_type_code':      property_type_enc.get(property_type, 0),
-        'purpose_code':            purpose_enc.get(purpose, 0),
+        'city_code':               _encode(city_enc,          city,          'city'),
+        'property_type_code':      _encode(property_type_enc, property_type, 'property_type'),
+        'purpose_code':            _encode(purpose_enc,       purpose,       'purpose'),
         'baths':                   float(baths) if baths is not None else np.nan,
         'bedrooms':                float(bedrooms) if bedrooms is not None else np.nan,
         'log_area_sqft':           log_area_sqft,
@@ -169,6 +226,11 @@ def predict(
     p90 = float(np.expm1(model_p90.predict(X)[0]))
 
     # Ensure ordering (quantile models can occasionally cross)
+    if p10 > p50 or p90 < p50:
+        logger.warning(
+            "Quantile crossing for location='%s' city='%s': p10=%.0f p50=%.0f p90=%.0f — clamping.",
+            canonical, city, p10, p50, p90,
+        )
     p10, p90 = min(p10, p50), max(p90, p50)
 
     # ── Confidence indicator ──────────────────────────────────────────────

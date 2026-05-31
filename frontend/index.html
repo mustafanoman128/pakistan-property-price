@@ -10,28 +10,31 @@
     <title>Pakistan Property Price Estimator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-body:    'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-display: 'Playfair Display', Georgia, serif;
             --accent:       #00644D;
             --accent-dark:  #003D2E;
             --accent-dim:   rgba(0,100,77,0.13);
+            --gold:         #B87333;
+            --gold-dim:     rgba(184,115,51,0.13);
             --text-1:       #0F1923;
             --text-2:       #566370;
             --text-3:       #9BA8B0;
             --border:       #DDE4ED;
             --surface:      rgba(255,255,255,0.93);
-            --radius-card:  18px;
-            --radius-input: 9px;
+            --radius-card:  20px;
+            --radius-input: 10px;
         }
 
         body {
             font-family: var(--font-body);
             font-size: 15px;
-            font-feature-settings: 'cv02','cv03','cv04','cv11';
+            font-feature-settings: 'tnum', 'ss01';
             background: transparent;
             color: var(--text-1);
             min-height: 100dvh;
@@ -47,12 +50,12 @@
             position: relative;
         }
         header h1 {
-            font-family: var(--font-body);
-            font-size: clamp(1.4rem, 4vw, 1.9rem);
-            font-weight: 800;
-            letter-spacing: -0.02em;
+            font-family: var(--font-display);
+            font-size: clamp(1.55rem, 4.5vw, 2.1rem);
+            font-weight: 700;
+            letter-spacing: -0.01em;
             margin-bottom: 6px;
-            text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+            text-shadow: 0 2px 16px rgba(0,0,0,0.5);
         }
         header p {
             font-size: 0.88rem;
@@ -73,23 +76,26 @@
 
         /* ── Card ──────────────────────────────────────────────────── */
         .card {
-            background: rgba(255,255,255,0.72);
+            background: rgba(255,255,255,0.76);
             backdrop-filter: blur(32px) saturate(200%);
             -webkit-backdrop-filter: blur(32px) saturate(200%);
-            border: 1px solid rgba(255,255,255,0.7);
-            border-top: 4px solid var(--accent);
+            border: 1px solid rgba(255,255,255,0.65);
+            border-top: 5px solid var(--accent);
             border-radius: var(--radius-card);
-            padding: 28px 24px;
+            padding: 30px 26px;
             box-shadow:
-                0 2px 8px rgba(0,0,0,0.18),
-                0 16px 48px rgba(0,0,0,0.28);
-            margin-bottom: 8px;
-            transition: box-shadow 0.22s;
+                0 2px 8px rgba(0,0,0,0.16),
+                0 18px 52px rgba(0,0,0,0.26),
+                inset 0 1px 0 rgba(255,255,255,0.92);
+            margin-bottom: 10px;
+            transition: box-shadow 0.25s, transform 0.25s;
         }
         .card:hover {
             box-shadow:
-                0 4px 12px rgba(0,0,0,0.20),
-                0 20px 56px rgba(0,0,0,0.32);
+                0 4px 14px rgba(0,0,0,0.18),
+                0 24px 64px rgba(0,0,0,0.30),
+                inset 0 1px 0 rgba(255,255,255,0.92);
+            transform: translateY(-1px);
         }
         .card-title {
             font-family: var(--font-body);
@@ -136,10 +142,10 @@
 
         label {
             font-family: var(--font-body);
-            font-size: 0.71rem;
+            font-size: 0.70rem;
             font-weight: 500;
             color: var(--text-2);
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
         }
         .opt-tag { font-weight: 400; color: var(--text-2); text-transform: none; }
@@ -261,28 +267,28 @@
             transition: background 0.12s, color 0.12s;
         }
         .ac-item:last-child { border-bottom: none; }
-        .ac-item:first-child { color: var(--accent); font-weight: 700; }
+        .ac-item:first-child { color: var(--accent); font-weight: 700; background: rgba(0,100,77,0.04); }
         .ac-item:hover, .ac-item:active { background: #f0fdf9; color: var(--accent); }
 
         /* Submit */
         .submit-btn {
             width: 100%;
-            margin-top: 14px;
+            margin-top: 16px;
             padding: 15px 20px;
-            background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+            background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 55%, #007A5E 100%);
             color: white;
             border: none;
             border-radius: var(--radius-input);
-            font-size: 0.97rem;
-            font-weight: 700;
+            font-size: 0.94rem;
+            font-weight: 600;
             font-family: inherit;
             cursor: pointer;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.05em;
             white-space: nowrap;
             position: relative;
             overflow: hidden;
             transition: filter 0.2s, transform 0.15s, box-shadow 0.2s;
-            box-shadow: 0 4px 20px rgba(0,100,77,0.30);
+            box-shadow: 0 4px 22px rgba(0,100,77,0.34), 0 1px 3px rgba(0,0,0,0.12);
             touch-action: manipulation;
         }
         .submit-btn::after {
@@ -311,19 +317,20 @@
 
         /* ── Reveal animation ───────────────────────────────────────── */
         @keyframes cardReveal {
-            from { opacity: 0; transform: translateY(22px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(26px) scale(0.982); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .card-reveal { animation: cardReveal 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .card-reveal { animation: cardReveal 0.52s cubic-bezier(0.16,1,0.3,1) forwards; }
 
         /* ── Results ───────────────────────────────────────────────── */
         .best-block {
             text-align: center;
-            background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 60%, var(--accent-dark) 100%);
+            background: linear-gradient(140deg, var(--accent-dark) 0%, var(--accent) 50%, #007A5E 80%, var(--accent-dark) 100%);
             border-radius: 14px;
-            padding: 22px 20px 18px;
+            padding: 24px 20px 20px;
             color: white;
             margin-bottom: 20px;
+            box-shadow: 0 4px 24px rgba(0,100,77,0.28), inset 0 1px 0 rgba(255,255,255,0.12);
         }
         .best-label {
             font-family: var(--font-body);
@@ -332,9 +339,10 @@
             opacity: 0.72; margin-bottom: 8px;
         }
         .best-value {
-            font-size: clamp(1.25rem, 4vw, 1.55rem);
-            font-weight: 800;
-            letter-spacing: -0.02em;
+            font-family: var(--font-display);
+            font-size: clamp(1.6rem, 5.5vw, 2.1rem);
+            font-weight: 700;
+            letter-spacing: -0.01em;
             margin-bottom: 10px;
             color: white;
         }
@@ -351,19 +359,19 @@
         }
         .range-end-val { font-size: 0.9rem; font-weight: 700; color: var(--text-1); }
 
-        .range-track { height: 6px; background: #e4eaf1; border-radius: 4px; position: relative; }
+        .range-track { height: 7px; background: #e4eaf1; border-radius: 4px; position: relative; }
         .range-fill {
             position: absolute; top: 0; bottom: 0; left: 0; right: 0;
             background: linear-gradient(90deg, rgba(0,100,77,0.25), var(--accent) 45%, var(--accent-dark) 55%, rgba(0,100,77,0.25));
             border-radius: 4px;
         }
         .range-thumb {
-            position: absolute; width: 18px; height: 18px;
-            background: var(--accent); border: 2px solid white;
-            border-radius: 50%; top: -6px;
+            position: absolute; width: 20px; height: 20px;
+            background: var(--accent); border: 2.5px solid white;
+            border-radius: 50%; top: -7px;
             transform: translateX(-50%);
-            box-shadow: 0 2px 10px rgba(0,100,77,0.4);
-            transition: left 0.4s ease;
+            box-shadow: 0 2px 12px rgba(0,100,77,0.45);
+            transition: left 0.45s cubic-bezier(0.16,1,0.3,1);
         }
 
         /* Meta row: badge + WhatsApp */
@@ -377,8 +385,9 @@
             border-top: 1px solid #eef2f6;
         }
         @keyframes badgePop {
-            from { opacity: 0; transform: scale(0.7); }
-            to   { opacity: 1; transform: scale(1); }
+            0%   { opacity: 0; transform: scale(0.65); }
+            70%  { transform: scale(1.06); }
+            100% { opacity: 1; transform: scale(1); }
         }
         .badge {
             display: inline-block; padding: 5px 14px;
@@ -445,12 +454,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 16px;
+            padding: 13px 16px;
             cursor: pointer;
             user-select: none;
-            background: #f8fafc;
+            background: #f7f9fb;
+            transition: background 0.18s;
             touch-action: manipulation;
         }
+        .panel-header:hover { background: #f0f5f2; }
         .panel-title   { font-size: 0.84rem; font-weight: 600; color: var(--text-1); }
         .panel-chevron { font-size: 0.72rem; color: var(--accent); transition: transform 0.25s; }
         .panel-chevron.open { transform: rotate(180deg); }
@@ -474,7 +485,7 @@
             text-align: center;
         }
         .emi-result-label { font-family: var(--font-body); font-size: 0.64rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.65); margin-bottom: 6px; }
-        .emi-monthly-val  { font-size: 1.45rem; font-weight: 800; margin-bottom: 8px; color: white; }
+        .emi-monthly-val  { font-family: var(--font-display); font-size: 1.55rem; font-weight: 700; margin-bottom: 8px; color: white; }
         .emi-sub          { font-size: 0.76rem; color: rgba(255,255,255,0.75); line-height: 1.7; }
 
         .emi-note {
@@ -595,7 +606,7 @@
             text-align: center;
         }
         .rb-stat-label { font-family: var(--font-body); font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-2); margin-bottom: 6px; }
-        .rb-stat-val   { font-size: 1.1rem; font-weight: 800; color: var(--accent); }
+        .rb-stat-val   { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--accent); }
 
         .rb-verdict {
             text-align: center;
@@ -722,10 +733,12 @@
         /* ── Footer ─────────────────────────────────────────────────── */
         footer {
             text-align: center;
-            padding: 6px 20px 12px;
-            font-size: 0.72rem;
-            color: rgba(255,255,255,0.40);
-            letter-spacing: 0.03em;
+            padding: 8px 20px 14px;
+            font-size: 0.70rem;
+            font-weight: 300;
+            color: rgba(255,255,255,0.42);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
             position: relative;
             z-index: 1;
         }
@@ -746,23 +759,30 @@
             margin-right: 2px;
         }
         .inf-btn {
-            padding: 5px 13px;
+            padding: 5px 14px;
             border-radius: 20px;
             border: 1.5px solid var(--border);
             background: transparent;
             color: var(--text-2);
-            font-size: 0.72rem;
+            font-size: 0.71rem;
             font-weight: 600;
             font-family: var(--font-body);
-            letter-spacing: 0.03em;
+            letter-spacing: 0.04em;
             cursor: pointer;
-            transition: all 0.18s;
+            transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
             touch-action: manipulation;
         }
-        .inf-btn.inf-active {
+        #inf-baseline.inf-active {
             background: var(--accent);
             border-color: var(--accent);
             color: #fff;
+            box-shadow: 0 2px 8px var(--accent-dim);
+        }
+        #inf-adjusted.inf-active {
+            background: var(--gold);
+            border-color: var(--gold);
+            color: #fff;
+            box-shadow: 0 2px 8px var(--gold-dim);
         }
         .inf-btn:not(.inf-active):hover {
             border-color: var(--text-3);
@@ -1064,6 +1084,8 @@
 
 <script>
     const API = 'https://pakistan-property-price.onrender.com';
+    const MARLA_TO_SQFT = 272.25;
+    const KANAL_TO_SQFT = 5445.0;
     let selectedUnit  = 'Sqft';
     let lastPayload   = null;
     let lastAreaSqft      = null;
@@ -1119,12 +1141,18 @@
     // ── Dropdown options ──────────────────────────────────────────────────
     async function loadOptions() {
         try {
-            const res  = await fetch(`${API}/options`);
+            const res = await fetch(`${API}/options`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             fillSelect('city',          data.cities);
             fillSelect('property_type', data.property_types);
             fillSelect('purpose',       data.purposes);
-        } catch (e) { console.error('Could not load options:', e); }
+        } catch (e) {
+            console.error('Could not load options:', e);
+            const errBox = document.getElementById('error-box');
+            errBox.textContent = 'Could not load form options. Please refresh the page.';
+            errBox.classList.add('show');
+        }
     }
 
     function fillSelect(id, values) {
@@ -1158,8 +1186,8 @@
 
     function getAreaSqft() {
         const v = parseFloat(document.getElementById('area_value').value) || 0;
-        if (selectedUnit === 'Marla') return v * 272.25;
-        if (selectedUnit === 'Kanal') return v * 5445;
+        if (selectedUnit === 'Marla') return v * MARLA_TO_SQFT;
+        if (selectedUnit === 'Kanal') return v * KANAL_TO_SQFT;
         return v;
     }
 
@@ -1187,10 +1215,18 @@
                 const city = document.getElementById('city').value;
                 if (city) params.set('city', city);
             }
-            const url = `${API}/locations?${params.toString()}`;
-            const items = await (await fetch(url)).json();
+            const res = await fetch(`${API}/locations?${params.toString()}`);
+            if (!res.ok) {
+                console.error(`Locations fetch failed: HTTP ${res.status}`);
+                document.getElementById(listId).classList.remove('open');
+                return;
+            }
+            const items = await res.json();
             renderAC(items, listId, inputId);
-        } catch (_) { document.getElementById(listId).classList.remove('open'); }
+        } catch (err) {
+            console.error('Autocomplete fetch error:', err);
+            document.getElementById(listId).classList.remove('open');
+        }
     }
 
     function renderAC(items, listId, inputId) {
@@ -1230,7 +1266,7 @@
         const areaSqft = getAreaSqft();
         let apiVal  = parseFloat(document.getElementById('area_value').value);
         let apiUnit = selectedUnit;
-        if (selectedUnit === 'Sqft') { apiVal = apiVal / 272.25; apiUnit = 'Marla'; }
+        if (selectedUnit === 'Sqft') { apiVal = apiVal / MARLA_TO_SQFT; apiUnit = 'Marla'; }
 
         const bedroomsVal = document.getElementById('bedrooms').value;
         const bathsVal    = document.getElementById('baths').value;
@@ -1246,16 +1282,10 @@
         };
 
         try {
-            const res = await fetch(`${API}/predict`, {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify(payload),
-            });
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.detail || 'Prediction failed. Please try again.');
+            if (isNaN(apiVal) || apiVal <= 0) {
+                throw new Error('Please enter a valid area value greater than zero.');
             }
-            const data = await res.json();
+            const data = await callPredict(payload);
             lastPayload  = payload;
             lastAreaSqft = areaSqft;
             mainResult   = data;
@@ -1304,7 +1334,7 @@
             document.getElementById('res-sqft').textContent =
                 `PKR ${Math.round(p50 / area).toLocaleString()} per sqft`;
             document.getElementById('res-per-marla').textContent =
-                `PKR ${fmtPkr(Math.round(p50 / (area / 272.25)))} per Marla`;
+                `PKR ${fmtPkr(Math.round(p50 / (area / MARLA_TO_SQFT)))} per Marla`;
         }
         document.getElementById('res-p10').textContent = `PKR ${fmtPkr(Math.round(mainResult.p10 * f))}`;
         document.getElementById('res-p90').textContent = `PKR ${fmtPkr(Math.round(mainResult.p90 * f))}`;
@@ -1337,7 +1367,7 @@
         animatePrice(document.getElementById('res-p50'), data.p50, data.p50_formatted);
         renderPrices(true);
 
-        // City avg indicator
+        // City avg indicator — uses raw 2019 values; percentage is invariant to inflation since both sides scale equally.
         const avgRow = document.getElementById('city-avg-row');
         if (data.city_median_pkr > 0 && data.p50 > 0) {
             const pct      = Math.round(Math.abs((data.p50 - data.city_median_pkr) / data.city_median_pkr) * 100);
@@ -1487,7 +1517,8 @@
             rbLoaded = true;
             document.getElementById('rb-loading').style.display = 'none';
             document.getElementById('rb-content').style.display = 'block';
-        } catch (_) {
+        } catch (err) {
+            console.error('Rental estimate fetch failed:', err);
             document.getElementById('rb-loading').style.display = 'none';
             const errEl = document.getElementById('rb-error');
             errEl.textContent = 'Could not load rental estimate. Please try again.';
@@ -1519,14 +1550,21 @@
             formatted: mainResult.p50_formatted,
         }];
 
+        const errors = [];
         for (const loc of [loc2, loc3]) {
             if (!loc) continue;
             try {
                 const d = await callPredict({ ...lastPayload, location: loc });
                 items.push({ label: d.location_matched, p50: d.p50, formatted: d.p50_formatted });
-            } catch (_) {
+            } catch (err) {
+                console.error(`Comparison fetch failed for '${loc}':`, err);
+                errors.push(loc);
                 items.push({ label: loc, p50: null, formatted: null });
             }
+        }
+        if (errors.length > 0) {
+            errEl.textContent = `Could not fetch estimates for: ${errors.join(', ')}. Other results shown.`;
+            errEl.classList.add('show');
         }
 
         compareItems = items;
@@ -1541,13 +1579,21 @@
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error('Failed');
+        if (!res.ok) {
+            let detail = 'Prediction failed. Please try again.';
+            try {
+                const err = await res.json();
+                if (err.detail) detail = err.detail;
+            } catch (_) {}
+            throw new Error(detail);
+        }
         return res.json();
     }
 
     function renderHBarChart(items) {
         const factor = inflationAdjusted ? INFLATION_FACTOR : 1;
         const valid  = items.filter(i => i.p50 !== null);
+        if (!valid.length) return;
         const maxP50 = Math.max(...valid.map(i => i.p50));
         const minP50 = Math.min(...valid.map(i => i.p50));
 
@@ -1582,7 +1628,7 @@
 
             const valEl = document.createElement('div');
             valEl.className   = 'h-bar-val';
-            valEl.textContent = item.p50 ? `PKR ${fmtPkr(Math.round(item.p50 * factor))}` : '—';
+            valEl.textContent = item.p50 !== null ? `PKR ${fmtPkr(Math.round(item.p50 * factor))}` : '—';
             meta.appendChild(valEl);
 
             if (isBest) {

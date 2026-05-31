@@ -3,8 +3,8 @@
 **AI-powered property price estimates for Pakistan's residential market.**  
 Built with LightGBM, FastAPI, and a zero-dependency single-page frontend.
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-00644D?style=for-the-badge&logo=render&logoColor=white)](https://pakistan-property-price-1.onrender.com)
-[![API](https://img.shields.io/badge/API-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://pakistan-property-price.onrender.com)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-00644D?style=for-the-badge&logo=render&logoColor=white)](https://pakistan-property-price.onrender.com)
+[![API](https://img.shields.io/badge/API-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://pakistan-property-price.onrender.com/docs)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![LightGBM](https://img.shields.io/badge/Model-LightGBM-02569B?style=for-the-badge)](https://lightgbm.readthedocs.io)
 
@@ -12,9 +12,9 @@ Built with LightGBM, FastAPI, and a zero-dependency single-page frontend.
 
 ## Live Demo
 
-> **[pakistan-property-price-1.onrender.com](https://pakistan-property-price-1.onrender.com)**
+> **[pakistan-property-price.onrender.com](https://pakistan-property-price.onrender.com)**
 
-> Note: The backend runs on Render's free tier and may take ~50 seconds to wake up after a period of inactivity. Subsequent requests are instant.
+> Note: The app runs on Render's free tier and may take ~50 seconds to wake up after a period of inactivity. Subsequent requests are instant.
 
 ---
 
@@ -43,7 +43,7 @@ Enter a city, property type, area, and neighbourhood — get an instant AI-power
 | Training Data | 120,000+ Zameen.com listings (2018–2019) |
 | Backend | FastAPI + Uvicorn |
 | Frontend | Vanilla HTML/CSS/JS — no framework, no build step |
-| Deployment | Render (Web Service + Static Site) |
+| Deployment | Render (single Web Service — serves API and frontend) |
 
 ---
 
